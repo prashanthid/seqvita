@@ -1,0 +1,41 @@
+#!/bin/bash
+
+shopt -s extglob
+
+#Parameters for DSV calling
+min_coverage=8;                               # Minimum coverage for variant calling
+min_reads2=2;                                 # Minimum number of reads that should support variant
+min_avg_qual=15;                              # Minimum base quality ata position to consider it for variant calling
+min_var_freq=0.01;                            # Minimum Variant allele frequency for variant calling
+min_freq_for_hom=0.75;                        # Minimum Variant allele frequency for a variant to be Homozygous
+p_value=0.99;                                 # P-value threshold bwlow which variant is called
+strand_filter=1;                               # Strand filter to filter variant with >90% or < 10% from one strand
+
+
+# Required Options
+input_file="";
+reference_file="";
+output_file="";
+variant_calling_type="";
+
+SOURCEDIR=$(dirname $(readlink -f $0))
+
+while getopts 'c:a:q:f:h:p:s:i:r:o:v:' par; do
+  case ${par} in
+    c) min_coverage="${OPTARG}" ;;
+    a) min_reads2="${OPTARG}" ;;
+    q) min_avg_qual="${OPTARG}" ;;
+    f) min_var_freq="${OPTARG}" ;;
+    h) min_freq_for_hom="${OPTARG}" ;;
+    p) p_value="${OPTARG}" ;;
+    s) strand_filter="${OPTARG}" ;;
+    i) input_file="${OPTARG}" ;;
+    r) reference_file="${OPTARG}" ;;
+    o) output_file="${OPTARG}" ;;
+    v) variant_calling_type="${OPTARG}" ;;
+    \?) echo "You have entered an invalid option: -$OPTARG" >& 2 exit ;;
+  esac
+done
+#echo $reference_file
+samtools mpileup -f $reference_file -B $input_file > $output_file.mpileup
+$SOURCEDIR/dsv $variant_calling_type ./$output_file.mpileup --min-coverage $min_coverage --min-reads2 $min_reads2 --min-avg-qual $min_avg_qual --min-var-freq $min_var_freq --min-freq-for-hom $min_freq_for_hom --p-value $p_value --strand-filter $strand_filter > $output_file.vcf
